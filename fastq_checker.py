@@ -11,7 +11,7 @@ class Validator:
         self.input_file = input_
         self.output_file = output_
         self.fail_fast = fail_fast
-        self.head = head
+        self.head = (head + (head % 4)) / 4 # round up to multiple of 4, divide by 4
         self.print_line = print_line
         self.kill = kill
 
@@ -125,11 +125,11 @@ def parse_args(args):
     )
 
     parser.add_argument(
-        "-t", "--head", type=int, default=0, help="Prints N lines from the top (head) of the file"
+        "-t", "--head", type=int, default=0, help="Prints N lines from the top (head) of the file, rounded up to nearest multiple of 4"
     )
 
     parser.add_argument(
-        "-l", "--print-line", type=int, default=None, help="Prints the lines around line N"
+        "-l", "--print-line", type=int, default=None, help="Prints the 4 lines around line N"
     )
 
     parser.add_argument(
