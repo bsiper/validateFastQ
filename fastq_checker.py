@@ -7,10 +7,12 @@ import re
 class Validator:
     """Class to validate fastq files
     """
-    def __init__(self, input_, output_, fail_fast):
+    def __init__(self, input_, output_, fail_fast, head, print_line):
         self.input_file = input_
         self.output_file = output_
         self.fail_fast = fail_fast
+        self.head = head
+        self.print_line = print_line
 
     @staticmethod
     def file_chunked_into_four_lines(iterable):
@@ -73,6 +75,12 @@ class Validator:
             #     i+=1
             lineno = 0
             for header, sequence, delim, quality in Validator.file_chunked_into_four_lines(f):
+                if self.head > 0:
+                    print(f'{header}{sequence}{delim}{quality}')
+                    self.head -= 1
+                if self.print_line is not None and self.print_line in range(lineno, lineno+4):
+                    print(f'------------LINE {self.print_line}------------')
+                    print(f'{header}{sequence}{delim}{quality}')
                 try:
                     self.check_header(header)
                     self.check_sequence_and_quality(sequence, quality)
@@ -111,12 +119,20 @@ def parse_args(args):
     parser.add_argument(
         "-x", "--fail-fast", action='store_true', help="Fails after the first error it encounters. Good for fast check"
     )
+
+    parser.add_argument(
+        "-t", "--head", type=int, default=0, help="Prints N lines from the top (head) of the file"
+    )
+
+    parser.add_argument(
+        "-l", "--print-line", type=int, default=None, help="Prints the lines around line N"
+    )
     return parser.parse_args()
 
 def main():
     try:
         args = parse_args(sys.argv[1:])
-        validator = Validator(args.input, args.output, args.fail_fast)
+        validator = Validator(args.input, args.output, args.fail_fast, args.head, args.print_line)
         validator.validate()
         if args.fix:
             validator.fix()
