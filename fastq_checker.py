@@ -7,12 +7,13 @@ import re
 class Validator:
     """Class to validate fastq files
     """
-    def __init__(self, input_, output_, fail_fast, head, print_line):
+    def __init__(self, input_, output_, fail_fast, head, print_line, kill):
         self.input_file = input_
         self.output_file = output_
         self.fail_fast = fail_fast
         self.head = head
         self.print_line = print_line
+        self.kill = kill
 
     @staticmethod
     def file_chunked_into_four_lines(iterable):
@@ -81,6 +82,9 @@ class Validator:
                 if self.print_line is not None and self.print_line in range(lineno, lineno+4):
                     print(f'------------LINE {self.print_line}------------')
                     print(f'{header}{sequence}{delim}{quality}')
+                if self.kill is not None and self.kill < lineno:
+                    print(f'KILLING PROGRAM AT LINE {self.kill}')
+                    sys.exit(1)
                 try:
                     self.check_header(header)
                     self.check_sequence_and_quality(sequence, quality)
@@ -127,12 +131,16 @@ def parse_args(args):
     parser.add_argument(
         "-l", "--print-line", type=int, default=None, help="Prints the lines around line N"
     )
+
+    parser.add_argument(
+        "-k", "--kill", type=int, default=None, help="Kill program after line N read"
+    )
     return parser.parse_args()
 
 def main():
     try:
         args = parse_args(sys.argv[1:])
-        validator = Validator(args.input, args.output, args.fail_fast, args.head, args.print_line)
+        validator = Validator(args.input, args.output, args.fail_fast, args.head, args.print_line, args.kill)
         validator.validate()
         if args.fix:
             validator.fix()
